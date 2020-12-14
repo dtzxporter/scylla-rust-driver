@@ -60,6 +60,7 @@ impl Connection {
             None => TcpStream::connect(addr).await?,
         };
         let source_port = stream.local_addr()?.port();
+        stream.set_nodelay(params.nodelay)?;
 
         // TODO: What should be the size of the channel?
         let (sender, receiver) = mpsc::channel(128);

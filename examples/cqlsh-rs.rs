@@ -16,6 +16,7 @@ async fn main() -> Result<()> {
         uri,
         ConnectionParams {
             compression: Some(Compression::LZ4),
+            nodelay: true,
         },
     )
     .await?;
