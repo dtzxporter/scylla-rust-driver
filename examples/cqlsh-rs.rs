@@ -1,6 +1,7 @@
 use anyhow::Result;
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
+use scylla::transport::connection_params::ConnectionParams;
 use scylla::transport::session::Session;
 use scylla::transport::Compression;
 use std::env;
@@ -11,7 +12,13 @@ async fn main() -> Result<()> {
 
     println!("Connecting to {} ...", uri);
 
-    let session = Session::connect(uri, Some(Compression::LZ4)).await?;
+    let session = Session::connect(
+        uri,
+        ConnectionParams {
+            compression: Some(Compression::LZ4),
+        },
+    )
+    .await?;
 
     let mut rl = Editor::<()>::new();
     loop {
