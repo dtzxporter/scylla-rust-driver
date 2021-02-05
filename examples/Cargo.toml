@@ -38,3 +38,7 @@ path = "select-paging.rs"
 [[example]]
 name = "user-defined-type"
 path = "user-defined-type.rs"
+
+[[example]]
+name = "test-types"
+path = "test-types.rs"

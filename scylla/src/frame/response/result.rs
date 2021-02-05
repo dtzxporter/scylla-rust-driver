@@ -38,6 +38,7 @@ enum ColumnType {
     Ascii,
     Int,
     BigInt,
+    Boolean,
     Text,
     Inet,
     List(Box<ColumnType>),
@@ -56,6 +57,7 @@ pub enum CQLValue {
     Ascii(String),
     Int(i32),
     BigInt(i64),
+    Boolean(bool),
     Text(String),
     Inet(IpAddr),
     List(Vec<CQLValue>),
@@ -87,6 +89,13 @@ impl CQLValue {
     pub fn as_bigint(&self) -> Option<i64> {
         match self {
             Self::BigInt(i) => Some(*i),
+            _ => None,
+        }
+    }
+
+    pub fn as_boolean(&self) -> Option<bool> {
+        match self {
+            Self::Boolean(i) => Some(*i),
             _ => None,
         }
     }
@@ -209,6 +218,7 @@ fn deser_type(buf: &mut &[u8]) -> StdResult<ColumnType, ParseError> {
     Ok(match id {
         0x0001 => Ascii,
         0x0002 => BigInt,
+        0x0004 => Boolean,
         0x0009 => Int,
         0x000D => Text,
         0x0010 => Inet,
@@ -364,6 +374,15 @@ fn deser_cql_value(typ: &ColumnType, buf: &mut &[u8]) -> StdResult<CQLValue, Par
                 )));
             }
             CQLValue::BigInt(buf.read_i64::<BigEndian>()?)
+        }
+        Boolean => {
+            if buf.len() != 1 {
+                return Err(ParseError::BadData(format!(
+                    "Buffer length should be 1 not {}",
+                    buf.len()
+                )));
+            }
+            CQLValue::Boolean(buf.read_i8()? > 0)
         }
         Text => CQLValue::Text(str::from_utf8(buf)?.to_owned()),
         Inet => CQLValue::Inet(match buf.len() {
