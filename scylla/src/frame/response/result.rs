@@ -2,6 +2,7 @@ use crate::cql_to_rust::{FromRow, FromRowError};
 use crate::frame::{frame_errors::ParseError, types};
 use byteorder::{BigEndian, ReadBytesExt};
 use bytes::{Buf, Bytes};
+use chrono::{Date, DateTime, Duration, TimeZone, Utc};
 use std::{
     collections::BTreeMap,
     convert::{TryFrom, TryInto},
@@ -39,8 +40,12 @@ enum ColumnType {
     Int,
     BigInt,
     Boolean,
+    Counter,
     SmallInt,
     TinyInt,
+    Date,
+    Time,
+    Timestamp,
     Text,
     Inet,
     List(Box<ColumnType>),
@@ -60,8 +65,12 @@ pub enum CQLValue {
     Int(i32),
     BigInt(i64),
     Boolean(bool),
+    Counter(u64),
     SmallInt(i16),
     TinyInt(i8),
+    Date(Date<Utc>),
+    Time(Duration),
+    Timestamp(DateTime<Utc>),
     Text(String),
     Inet(IpAddr),
     List(Vec<CQLValue>),
@@ -104,6 +113,13 @@ impl CQLValue {
         }
     }
 
+    pub fn as_counter(&self) -> Option<u64> {
+        match self {
+            Self::Counter(i) => Some(*i),
+            _ => None,
+        }
+    }
+
     pub fn as_smallint(&self) -> Option<i16> {
         match self {
             Self::SmallInt(i) => Some(*i),
@@ -114,6 +130,27 @@ impl CQLValue {
     pub fn as_tinyint(&self) -> Option<i8> {
         match self {
             Self::TinyInt(i) => Some(*i),
+            _ => None,
+        }
+    }
+
+    pub fn as_date(&self) -> Option<Date<Utc>> {
+        match self {
+            Self::Date(i) => Some(*i),
+            _ => None,
+        }
+    }
+
+    pub fn as_time(&self) -> Option<Duration> {
+        match self {
+            Self::Time(i) => Some(*i),
+            _ => None,
+        }
+    }
+
+    pub fn as_timestamp(&self) -> Option<DateTime<Utc>> {
+        match self {
+            Self::Timestamp(i) => Some(*i),
             _ => None,
         }
     }
@@ -237,9 +274,13 @@ fn deser_type(buf: &mut &[u8]) -> StdResult<ColumnType, ParseError> {
         0x0001 => Ascii,
         0x0002 => BigInt,
         0x0004 => Boolean,
+        0x0005 => Counter,
         0x0009 => Int,
+        0x000B => Timestamp,
         0x000D => Text,
         0x0010 => Inet,
+        0x0011 => Date,
+        0x0012 => Time,
         0x0013 => SmallInt,
         0x0014 => TinyInt,
         0x0020 => List(Box::new(deser_type(buf)?)),
@@ -404,6 +445,15 @@ fn deser_cql_value(typ: &ColumnType, buf: &mut &[u8]) -> StdResult<CQLValue, Par
             }
             CQLValue::Boolean(buf.read_i8()? > 0)
         }
+        Counter => {
+            if buf.len() != 8 {
+                return Err(ParseError::BadData(format!(
+                    "Buffer length should be 8 not {}",
+                    buf.len()
+                )));
+            }
+            CQLValue::Counter(buf.read_u64::<BigEndian>()?)
+        }
         SmallInt => {
             if buf.len() != 2 {
                 return Err(ParseError::BadData(format!(
@@ -441,6 +491,35 @@ fn deser_cql_value(typ: &ColumnType, buf: &mut &[u8]) -> StdResult<CQLValue, Par
                 )));
             }
         }),
+        Date => {
+            if buf.len() != 4 {
+                return Err(ParseError::BadData(format!(
+                    "Buffer length should be 4 not {}",
+                    buf.len()
+                )));
+            }
+            let days = buf.read_i32::<BigEndian>()?;
+            let date = Utc.timestamp(0, 0) + Duration::days(days.into());
+            CQLValue::Date(date.date())
+        }
+        Time => {
+            if buf.len() != 8 {
+                return Err(ParseError::BadData(format!(
+                    "Buffer length should be 8 not {}",
+                    buf.len()
+                )));
+            }
+            CQLValue::Time(Duration::nanoseconds(buf.read_i64::<BigEndian>()?))
+        }
+        Timestamp => {
+            if buf.len() != 8 {
+                return Err(ParseError::BadData(format!(
+                    "Buffer length should be 8 not {}",
+                    buf.len()
+                )));
+            }
+            CQLValue::Timestamp(Utc.timestamp(buf.read_i64::<BigEndian>()?, 0))
+        }
         List(type_name) => {
             let len: usize = types::read_int(buf)?.try_into()?;
             let mut res = Vec::with_capacity(len);

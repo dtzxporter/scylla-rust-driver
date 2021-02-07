@@ -1,4 +1,5 @@
 use super::result::{CQLValue, Row};
+use chrono::{Date, DateTime, Duration, Utc};
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::net::IpAddr;
@@ -71,6 +72,10 @@ impl_from_cql_val!(i8, as_tinyint);
 impl_from_cql_val!(i16, as_smallint);
 impl_from_cql_val!(i32, as_int);
 impl_from_cql_val!(i64, as_bigint);
+impl_from_cql_val!(u64, as_counter);
+impl_from_cql_val!(Date<Utc>, as_date);
+impl_from_cql_val!(Duration, as_time);
+impl_from_cql_val!(DateTime<Utc>, as_timestamp);
 impl_from_cql_val!(bool, as_boolean);
 impl_from_cql_val!(String, into_string);
 impl_from_cql_val!(IpAddr, as_inet);

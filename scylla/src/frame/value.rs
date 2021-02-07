@@ -1,6 +1,8 @@
 use bytes::BufMut;
+use chrono::{Date, DateTime, Duration, TimeZone, Utc};
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::convert::TryFrom;
 use std::convert::TryInto;
 use thiserror::Error;
 
@@ -187,6 +189,14 @@ impl Value for i64 {
     }
 }
 
+impl Value for u64 {
+    fn serialize(&self, buf: &mut Vec<u8>) -> Result<(), ValueTooBig> {
+        buf.put_i32(8);
+        buf.put_u64(*self);
+        Ok(())
+    }
+}
+
 impl Value for bool {
     fn serialize(&self, buf: &mut Vec<u8>) -> Result<(), ValueTooBig> {
         buf.put_i32(1);
@@ -210,6 +220,41 @@ impl Value for &str {
 impl Value for String {
     fn serialize(&self, buf: &mut Vec<u8>) -> Result<(), ValueTooBig> {
         <&str as Value>::serialize(&self.as_str(), buf)
+    }
+}
+
+impl Value for Date<Utc> {
+    fn serialize(&self, buf: &mut Vec<u8>) -> Result<(), ValueTooBig> {
+        let diff = *self - Utc.timestamp(0, 0).date();
+        match i32::try_from(diff.num_days()).ok() {
+            Some(days) => {
+                buf.put_i32(4);
+                buf.put_i32(days);
+                Ok(())
+            }
+            None => Err(ValueTooBig),
+        }
+    }
+}
+
+impl Value for Duration {
+    fn serialize(&self, buf: &mut Vec<u8>) -> Result<(), ValueTooBig> {
+        match self.num_nanoseconds() {
+            Some(ns) => {
+                buf.put_i32(8);
+                buf.put_i64(ns);
+                Ok(())
+            }
+            None => Err(ValueTooBig),
+        }
+    }
+}
+
+impl Value for DateTime<Utc> {
+    fn serialize(&self, buf: &mut Vec<u8>) -> Result<(), ValueTooBig> {
+        buf.put_i32(8);
+        buf.put_i64(self.timestamp_millis());
+        Ok(())
     }
 }
 
