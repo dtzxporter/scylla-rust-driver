@@ -156,6 +156,7 @@ impl Connection {
             contents: query.get_contents().to_owned(),
             parameters: query::QueryParameters {
                 consistency: query.get_consistency(),
+                serial_consistency: query.get_serial_consistency(),
                 values: &serialized_values,
                 page_size: query.get_page_size(),
                 paging_state,
@@ -177,6 +178,7 @@ impl Connection {
             id: prepared_statement.get_id().to_owned(),
             parameters: query::QueryParameters {
                 consistency: prepared_statement.get_consistency(),
+                serial_consistency: prepared_statement.get_serial_consistency(),
                 values: &serialized_values,
                 page_size: prepared_statement.get_page_size(),
                 paging_state,
