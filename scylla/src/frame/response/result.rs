@@ -518,7 +518,7 @@ fn deser_cql_value(typ: &ColumnType, buf: &mut &[u8]) -> StdResult<CQLValue, Par
                     buf.len()
                 )));
             }
-            CQLValue::Timestamp(Utc.timestamp(buf.read_i64::<BigEndian>()?, 0))
+            CQLValue::Timestamp(Utc.timestamp_millis(buf.read_i64::<BigEndian>()?))
         }
         List(type_name) => {
             let len: usize = types::read_int(buf)?.try_into()?;

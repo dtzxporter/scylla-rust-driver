@@ -18,7 +18,7 @@ impl Query {
             contents,
             page_size: None,
             consistency: Default::default(),
-            serial_consistency: None, 
+            serial_consistency: None,
         }
     }
 
