@@ -69,10 +69,13 @@ macro_rules! impl_from_cql_val {
 }
 
 impl_from_cql_val!(i8, as_tinyint);
+impl_from_cql_val!(u8, as_utinyint);
 impl_from_cql_val!(i16, as_smallint);
+impl_from_cql_val!(u16, as_usmallint);
 impl_from_cql_val!(i32, as_int);
+impl_from_cql_val!(u32, as_uint);
 impl_from_cql_val!(i64, as_bigint);
-impl_from_cql_val!(u64, as_counter);
+impl_from_cql_val!(u64, as_ubigint_counter);
 impl_from_cql_val!(Date<Utc>, as_date);
 impl_from_cql_val!(Duration, as_time);
 impl_from_cql_val!(DateTime<Utc>, as_timestamp);

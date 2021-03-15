@@ -99,6 +99,13 @@ impl CQLValue {
         }
     }
 
+    pub fn as_uint(&self) -> Option<u32> {
+        match self {
+            Self::Int(i) => Some(*i as u32),
+            _ => None,
+        }
+    }
+
     pub fn as_bigint(&self) -> Option<i64> {
         match self {
             Self::BigInt(i) => Some(*i),
@@ -113,9 +120,10 @@ impl CQLValue {
         }
     }
 
-    pub fn as_counter(&self) -> Option<u64> {
+    pub fn as_ubigint_counter(&self) -> Option<u64> {
         match self {
             Self::Counter(i) => Some(*i),
+            Self::BigInt(i) => Some(*i as u64),
             _ => None,
         }
     }
@@ -127,9 +135,23 @@ impl CQLValue {
         }
     }
 
+    pub fn as_usmallint(&self) -> Option<u16> {
+        match self {
+            Self::SmallInt(i) => Some(*i as u16),
+            _ => None,
+        }
+    }
+
     pub fn as_tinyint(&self) -> Option<i8> {
         match self {
             Self::TinyInt(i) => Some(*i),
+            _ => None,
+        }
+    }
+
+    pub fn as_utinyint(&self) -> Option<u8> {
+        match self {
+            Self::TinyInt(i) => Some(*i as u8),
             _ => None,
         }
     }

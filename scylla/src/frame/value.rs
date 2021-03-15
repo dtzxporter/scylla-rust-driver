@@ -181,6 +181,14 @@ impl Value for i32 {
     }
 }
 
+impl Value for u32 {
+    fn serialize(&self, buf: &mut Vec<u8>) -> Result<(), ValueTooBig> {
+        buf.put_i32(4);
+        buf.put_u32(*self);
+        Ok(())
+    }
+}
+
 impl Value for i64 {
     fn serialize(&self, buf: &mut Vec<u8>) -> Result<(), ValueTooBig> {
         buf.put_i32(8);
